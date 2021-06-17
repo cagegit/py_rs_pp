@@ -148,8 +148,9 @@ class LoginAndSign:
             # time.sleep(200)
         except TimeoutException:
             logger.error('操作超时！该条数据可以重新使用', exc_info=True)
-            self.error_type = '2'
-            self.error_info = '操作超时！该条数据可以重新使用'
+            if self.error_type != '3':
+                self.error_type = '2'
+                self.error_info = '操作超时！该条数据可以重新使用'
             self.errorList.append(self.u_name)
         except Exception as e:
             print(e)
@@ -238,7 +239,7 @@ class LoginAndSign:
         # 增加完成弹框验证
         has_done = False
         try:
-            done_link = WebDriverWait(self.driver, 5).until(
+            done_link = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'a.ppvx_btn___5-7-4'))
             )
             if done_link:
@@ -303,13 +304,13 @@ class LoginAndSign:
     def pay_to_account(self):
         # 跳转到付款界面
         self.driver.get(self.transfer_url)
-        accept_money_input = WebDriverWait(self.driver, 10).until(
+        accept_money_input = WebDriverWait(self.driver, 20).until(
             EC.presence_of_element_located((By.ID, 'fn-sendRecipient'))
         )
         accept_money_input.send_keys(self.u_pay_account)
         # time.sleep(500)
         # 判断下一页按钮是否可用
-        next_btn = WebDriverWait(self.driver, 15).until(
+        next_btn = WebDriverWait(self.driver, 20).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, 'button[type=submit]'))
         )
         # next_btn.click()

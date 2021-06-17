@@ -127,6 +127,10 @@ class MyFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super(MyFrame, self).__init__(*args, **kw)
 
+        # 增加暂停功能
+        self.is_pause = False
+        self.current_loop_index = 0
+
         pnl = wx.Panel(self)
         pnl.SetAutoLayout(True)
 
@@ -162,20 +166,20 @@ class MyFrame(wx.Frame):
         hbox1.Add(self.vpn_path_input)
 
         #  hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        label2 = wx.StaticText(pnl, label='国家：')
-        list1 = ['美国', '英国', "德国", "法国", "西班牙"]
-        self.country_list_ctrl = wx.ComboBox(pnl, -1, value='美国', choices=list1, style=wx.CB_SORT)
-        if self.conf_len > 0:
-            self.country_list_ctrl.SetValue(config['DEFAULT']['country'])
-        self.country_list_ctrl.Disable()
+        # label2 = wx.StaticText(pnl, label='国家：')
+        # list1 = ['美国', '英国', "德国", "法国", "西班牙"]
+        # self.country_list_ctrl = wx.ComboBox(pnl, -1, value='美国', choices=list1, style=wx.CB_SORT)
+        # if self.conf_len > 0:
+        #     self.country_list_ctrl.SetValue(config['DEFAULT']['country'])
+        # self.country_list_ctrl.Disable()
         label3 = wx.StaticText(pnl, 0, label=u'切换VPN：')
         self.vpn_ctrl = wx.TextCtrl(pnl, 0, value="20", size=(30, -1))
         if self.conf_len > 0:
             self.vpn_ctrl.SetValue(config['DEFAULT']['vpnnumber'])
         # c_vpn.WriteText('5')
         # self.vpn_ctrl.Disable()
-        hbox1.Add(label2, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
-        hbox1.Add(self.country_list_ctrl)
+        # hbox1.Add(label2, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
+        # hbox1.Add(self.country_list_ctrl)
         hbox1.Add(label3, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 10)
         hbox1.Add(self.vpn_ctrl)
 
@@ -191,6 +195,10 @@ class MyFrame(wx.Frame):
 
         self.start_btn = wx.Button(pnl, label="开始")
         hbox1.Add(self.start_btn, 0, wx.LEFT, 10)
+
+        self.pause_btn = wx.Button(pnl, label="暂停")
+        hbox1.Add(self.pause_btn, 0, wx.LEFT, 10)
+        self.pause_btn.Disable()
 
         vbox.Add(hbox1, 0, flag=wx.ALL | wx.EXPAND, border=15)
         #  vbox.Add(hbox2,0,flag=wx.ALL | wx.EXPAND, border=5)
@@ -215,6 +223,7 @@ class MyFrame(wx.Frame):
         # self.Bind(wx.EVT_BUTTON, self.del_list, id=btn3.GetId())
         # 绑定开始方法
         self.Bind(wx.EVT_BUTTON, self.loop_table, id=self.start_btn.GetId())
+        self.Bind(wx.EVT_BUTTON, self.pause_loop, id=self.pause_btn.GetId())
         self.Bind(wx.EVT_BUTTON, self.get_vpn_res, id=self.vpn_change_btn.GetId())
         self.Bind(wx.EVT_BUTTON, self.open_result_file, id=self.output_btn.GetId())
         self.Bind(wx.EVT_BUTTON, self.clear_table, id=self.clear_all_btn.GetId())
@@ -250,10 +259,16 @@ class MyFrame(wx.Frame):
         pnl.SetSizer(vbox)
         self.Centre()
 
+    def pause_loop(self, event):
+        print('pause info')
+        self.is_pause = True
+        self.pause_btn.Disable()
+
     def clear_table(self, event):
         confirm_exit = wx.MessageDialog(None, '确认要清空表格数据吗？', '确认框', wx.YES_NO | wx.ICON_QUESTION)
         if confirm_exit.ShowModal() == wx.ID_YES:
             self.table.clear_all_items()
+            self.current_loop_index = 0
             logger.info('列表已清空！')
         else:
             logger.info('取消清空！')
@@ -329,7 +344,8 @@ class MyFrame(wx.Frame):
         logger.info('hwnd:')
         logger.info(hwnd)
         change_proxy_ins = AutoChangeProxy(vpn_path_input_text)
-        country = self.country_map[self.country_list_ctrl.GetValue()]
+        # country = self.country_map[self.country_list_ctrl.GetValue()]
+        country = 'US'
         logger.info('国家：' + country)
         res = change_proxy_ins.change_ip('US', hwnd=str(hwnd))
         return res
@@ -343,6 +359,7 @@ class MyFrame(wx.Frame):
             # self.vpn_path_input.Disable()
             self.vpn_change_btn.Disable()
             self.clear_all_btn.Disable()
+            self.pause_btn.Enable()
         else:
             self.browser_path_input.Enable()
             self.start_btn.Enable()
@@ -351,6 +368,7 @@ class MyFrame(wx.Frame):
             # self.vpn_path_input.Enable()
             self.vpn_change_btn.Enable()
             self.clear_all_btn.Enable()
+            self.pause_btn.Disable()
 
     def add_list(self, event):
         print('add_list')
@@ -365,6 +383,7 @@ class MyFrame(wx.Frame):
         self.table.list.Refresh()
 
     def loop_table(self, event):
+
         # 判断浏览器地址是否为空
         browser_path_text = self.browser_path_input.GetValue()
         print(browser_path_text)
@@ -391,7 +410,8 @@ class MyFrame(wx.Frame):
             return
         # 切换次数
         vpn_number = int(self.vpn_ctrl.GetValue())
-        country_text = self.country_list_ctrl.GetValue()
+        # country_text = self.country_list_ctrl.GetValue()
+        country_text = '美国'
         country = self.country_map[country_text]
         print(country)
         # 写入配置文件
@@ -403,7 +423,8 @@ class MyFrame(wx.Frame):
         if self.table.list.GetItemCount() == 0:
             wx.MessageBox('数据不能为空，请拖入数据到列表！', '错误提示', wx.OK | wx.ICON_ERROR)
             return
-
+        # 停止暂停
+        self.is_pause = False
         # 禁用开始按钮
         self.chang_ctrl_status(False)
         # 循环获取表格行信息
@@ -433,60 +454,44 @@ class LoopTableThread(threading.Thread):
         web_url = 'wx'
         from register.login_and_sign import LoginAndSign
         register_call = LoginAndSign
-        # if self.country == 'US':
-        #     from register.index import Register
-        #     # 美国
-        #     web_url = 'https://www.paypal.com/us/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=us_US&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = Register
-        # elif self.country == 'FR':
-        #     from register.fr_register import FrRegister
-        #     # 法国
-        #     web_url = 'https://www.paypal.com/fr/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=fr_FR&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = FrRegister
-        # elif self.country == 'ES':
-        #     from register.es_register import EsRegister
-        #     # 西班牙
-        #     web_url = 'https://www.paypal.com/es/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=es_ES&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = EsRegister
-        # elif self.country == 'DE':
-        #     from register.de_register import DeRegister
-        #     # 德国
-        #     web_url = 'https://www.paypal.com/de/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=de_DE&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = DeRegister
-        # elif self.country == 'UK':
-        #     from register.uk_register import UkRegister
-        #     # 英国
-        #     web_url = 'https://www.paypal.com/uk/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=uk_UK&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = UkRegister
-        # logger.info(web_url)
-        # register_call
+
         logger.info(register_call)
         current_vpn_index = 0
         success_count = 0
         error_count = 0
+        time_out_count = 0
         if web_url and register_call:
             ip = None
-            for idx in range(0, self.parent.table.list.GetItemCount()):
+            for idx in range(self.parent.current_loop_index, self.parent.table.list.GetItemCount()):
+                # 增加暂停功能
+                if self.parent.is_pause:
+                    self.parent.current_loop_index = idx
+                    break
+
                 col_count = self.parent.table.list.GetColumnCount() - 2
                 col_count_last = self.parent.table.list.GetColumnCount() - 1
                 # print(self.table.list.GetItem(col_count-1).GetText())
                 # 切换vpn
-                if current_vpn_index >= self.vpn_number or current_vpn_index == 0:
-                    current_vpn_index = current_vpn_index + 1
-                    if current_vpn_index > self.vpn_number:
-                        current_vpn_index = 1
-                    ip = self.parent.get_vpn_res(None)
-                    # 重试三次
-                    if not ip:
-                        ip = self.parent.get_vpn_res(None)
-                    if not ip:
-                        ip = self.parent.get_vpn_res(None)
-                    if not ip:
-                        ip = self.parent.get_vpn_res(None)
-                else:
-                    current_vpn_index = current_vpn_index + 1
-                logger.info('ip 地址：')
-                logger.info(ip)
+                # if current_vpn_index == 0:
+                #     self.parent.get_vpn_res(None)
+                # else:
+                #     current_vpn_index = current_vpn_index + 1
+                # if current_vpn_index >= self.vpn_number or current_vpn_index == 0:
+                #     current_vpn_index = current_vpn_index + 1
+                #     if current_vpn_index > self.vpn_number:
+                #         current_vpn_index = 1
+                #     ip = self.parent.get_vpn_res(None)
+                #     # 重试三次
+                #     if not ip:
+                #         ip = self.parent.get_vpn_res(None)
+                #     if not ip:
+                #         ip = self.parent.get_vpn_res(None)
+                #     if not ip:
+                #         ip = self.parent.get_vpn_res(None)
+                # else:
+                #     current_vpn_index = current_vpn_index + 1
+                # logger.info('ip 地址：')
+                # logger.info(ip)
                 # if ip:
                 #     wx.CallAfter(self.parent.table.list.SetItem, idx, col_count - 1, ip)
                 # else:
@@ -494,8 +499,9 @@ class LoopTableThread(threading.Thread):
 
                 current_item = self.parent.table.list.GetItemText(idx)
                 logger.info("current_item:")
-                print(current_item)
-                # test_num = random.randint(1,10)
+                logger.info(current_item)
+                # time.sleep(5)
+                # test_num = random.randint(1, 10)
                 # if test_num > 5:
                 #     wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '成功')
                 # else:
@@ -505,6 +511,7 @@ class LoopTableThread(threading.Thread):
                 # wx.CallAfter(self.parent.process_result.SetLabelText,
                 #              u'执行结果：成功：%d 条，失败：%d 条' % (success_count, error_count))
                 # 实例化注册类
+
                 account_list = []
                 for col_index in range(0, 7):
                     text = self.parent.table.list.GetItemText(idx, col_index)
@@ -521,6 +528,7 @@ class LoopTableThread(threading.Thread):
                 # 记录输出详情
                 logger.info(register_ins.successList)
                 logger.info(register_ins.errorList)
+                is_time_out = False
                 if len(success_list) > 0:
                     self.parent.all_success_list.append(success_list[0])
                     success_count = success_count + 1
@@ -536,15 +544,27 @@ class LoopTableThread(threading.Thread):
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '领券成功')
                     elif register_ins.error_type == '2':
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '超时')
+                        time_out_count = time_out_count + 1
+                        is_time_out = True
                     else:
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '失败')
 
                     if register_ins.error_info:
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count_last, register_ins.error_info)
+                # 超时判断
+                if is_time_out:
+                    # 更换IP
+                    self.parent.get_vpn_res(None)
+                    time_out_count = 0
+                    time.sleep(5)
+                # 一次循环累计超时5次超时暂停循环
+                if time_out_count == 5:
+                    self.parent.pause_loop()
 
-                logger.info('idx:' + str(idx))
+                # logger.info('idx:' + str(idx))
                 # time.sleep(1)
             self.parent.chang_ctrl_status(True)
+            self.parent.current_loop_index = 0
             # self.parent.output_btn.Disable()
 
 
