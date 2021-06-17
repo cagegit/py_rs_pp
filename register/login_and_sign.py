@@ -127,23 +127,24 @@ class LoginAndSign:
             submit_btn.click()
             time.sleep(5)
             # self.pay_to_account()
-            jx_btn = False
+            # 判断转账5.00是否存在
+            # jx_btn = False
             try:
-                receive_btn = WebDriverWait(self.driver, 8).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, 'a.ppvx_btn.ppvx_btn--inverse'))
+                receive_span = WebDriverWait(self.driver, 15).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'span.cw_tile-currency'))
                 )
-                logger.info('接受款项按钮')
-                if receive_btn:
-                    jx_btn = True
-                # time.sleep(10000)
-                self.accept_five()
+                balance_text = receive_span.get_attribute('textContent')
+                logger.info(balance_text)
+                if receive_span and '5.00' in balance_text:
+                    logger.info('5刀余额存在！')
+                    self.error_type = '3'
+                    self.error_info = '5刀余额存在，未支付成功，需手动处理!'
+                    self.pay_to_account()
             except TimeoutException:
-                logger.error('没有接受按钮存在！', exc_info=True)
-                # self.errorList.append(self.account)
-                if not jx_btn:
-                    self.ling_quan()
-            finally:
-                logger.info('领券流程结束！')
+                logger.error('5刀余额，不存在！', exc_info=True)
+            except Exception as e:
+                print(e)
+                logger.error('5刀余额操作过程异常', exc_info=True)
 
             # time.sleep(200)
         except TimeoutException:
@@ -368,8 +369,6 @@ class LoginAndSign:
         except Exception as e:
             print(e)
             logger.info('没有第三种提示！')
-            # self.errorList.append(self.account)
-            # self.ling_quan()
         # 立即发送付款
         # button.button.css-1mggxor.vx_btn
         # css-uobemr vx_btn
@@ -396,7 +395,7 @@ class LoginAndSign:
                 logger.info('付款流程成功! 未判断文本!')
                 self.successList.append(True)
         # 等待3秒
-        time.sleep(3)
+        time.sleep(5)
 
 
 if __name__ == '__main__':

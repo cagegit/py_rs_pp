@@ -265,7 +265,7 @@ class MyFrame(wx.Frame):
             file_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_成功结果.txt'
             file_error_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_失败结果.txt'
             file_time_out_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_超时结果.txt'
-            file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功未支付结果.txt'
+            file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_5刀余额未支付结果.txt'
             success_list = []
             error_list = []
             time_out_list = []
@@ -283,7 +283,7 @@ class MyFrame(wx.Frame):
                             flag = 1
                         if text == '超时':
                             flag = 2
-                        if text == '领券成功':
+                        if text == '5刀余额':
                             flag = 3
                         str_item = str_item + text + split_str
                     else:
@@ -433,33 +433,6 @@ class LoopTableThread(threading.Thread):
         web_url = 'wx'
         from register.login_and_sign import LoginAndSign
         register_call = LoginAndSign
-        # if self.country == 'US':
-        #     from register.index import Register
-        #     # 美国
-        #     web_url = 'https://www.paypal.com/us/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=us_US&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = Register
-        # elif self.country == 'FR':
-        #     from register.fr_register import FrRegister
-        #     # 法国
-        #     web_url = 'https://www.paypal.com/fr/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=fr_FR&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = FrRegister
-        # elif self.country == 'ES':
-        #     from register.es_register import EsRegister
-        #     # 西班牙
-        #     web_url = 'https://www.paypal.com/es/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=es_ES&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = EsRegister
-        # elif self.country == 'DE':
-        #     from register.de_register import DeRegister
-        #     # 德国
-        #     web_url = 'https://www.paypal.com/de/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=de_DE&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = DeRegister
-        # elif self.country == 'UK':
-        #     from register.uk_register import UkRegister
-        #     # 英国
-        #     web_url = 'https://www.paypal.com/uk/cgi-bin/webscr?cmd=_integrated-registration&ev=1.9&locale=uk_UK&fdata=Ul58zj%2FYbie6f5ipBaS3hwrSfch%2BEdmdbGxSK1cadSrbpe9W3Od6p%2FMcMP7kRwA4t97Ug4W0jufoT8737J6uGg%3D%3D#'
-        #     register_call = UkRegister
-        # logger.info(web_url)
-        # register_call
         logger.info(register_call)
         current_vpn_index = 0
         success_count = 0
@@ -533,7 +506,7 @@ class LoopTableThread(threading.Thread):
                     wx.CallAfter(self.parent.process_result.SetLabelText,
                                  u'执行结果：成功：%d 条，失败：%d 条' % (success_count, error_count))
                     if register_ins.error_type == '3':
-                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '领券成功')
+                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '5刀余额')
                     elif register_ins.error_type == '2':
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '超时')
                     else:
@@ -578,7 +551,7 @@ class Table(wx.ListCtrl):
 
 def main():
     app = wx.App()
-    frm = MyFrame(None, title='自动注册', size=(1000, 750))
+    frm = MyFrame(None, title='判断5美金并支付版本', size=(1000, 750))
     frm.Show()
     app.MainLoop()
 
