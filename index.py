@@ -6,7 +6,6 @@ import threading
 import random
 import string
 import os
-# import sys
 import configparser
 from register.auto_proxy import AutoChangeProxy
 
@@ -97,7 +96,7 @@ class MyFileDropTarget(wx.FileDropTarget):
             with open(file_name, 'r') as fon:
                 for line in fon.readlines():
                     print(line)
-                    line = line.strip().replace("--------", "----")
+                    line = line.strip().replace("一一", "----")
                     line = line.replace("-----", "----")
                     account_list = line.split('----')
                     account_list.append('')
@@ -124,7 +123,7 @@ class MyFileDropTarget(wx.FileDropTarget):
 
 
 class MyFrame(wx.Frame):
-    country_map = {'美国': 'US', '英国': 'UK', "德国": 'DE', "法国": 'FR', "西班牙": 'ES'}
+    country_map = {'美国': 'US', '英国': 'GB', "德国": 'DE', "法国": 'FR', "西班牙": 'ES'}
     change_vpn_err_max = 3
 
     all_success_list = []
@@ -183,7 +182,7 @@ class MyFrame(wx.Frame):
         #     self.country_list_ctrl.SetValue(config['DEFAULT']['country'])
         # self.country_list_ctrl.Disable()
         label3 = wx.StaticText(pnl, 0, label=u'切换VPN：')
-        self.vpn_ctrl = wx.TextCtrl(pnl, 0, value="20", size=(30, -1))
+        self.vpn_ctrl = wx.TextCtrl(pnl, 0, value="2", size=(30, -1))
         if self.conf_len > 0:
             self.vpn_ctrl.SetValue(config['DEFAULT']['vpnnumber'])
         # c_vpn.WriteText('5')
@@ -241,7 +240,7 @@ class MyFrame(wx.Frame):
         vbox.Add(operator_sizer)
         # 列表
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.columns = [u'邮箱', u'密码', u'出生日期', u'社会安全码', u'收款账号', u'执行结果', u'描述']
+        self.columns = [u'名字', u'姓氏', u'街道', u'地区', u'邮编', u'邮箱', u'密码', u'执行结果', u'描述']
         self.dataList = []
         self.table = Table(pnl, self.columns, self.dataList)
 
@@ -290,15 +289,12 @@ class MyFrame(wx.Frame):
     # 打开执行结果目录
     def open_result_file(self, event):
         if self.table.list.GetItemCount() > 0:
-            file_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_成功结果.txt'
-            file_error_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_失败结果.txt'
+            file_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功结果.txt'
+            file_error_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券失败结果.txt'
             file_time_out_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_超时结果.txt'
-            file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功未支付结果.txt'
-            all_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_所有领券成功结果.txt'
             success_list = []
             error_list = []
             time_out_list = []
-            lq_success_list = []
             for idx in range(0, self.table.list.GetItemCount()):
                 str_item = ''
                 flag = 0
@@ -308,12 +304,10 @@ class MyFrame(wx.Frame):
                     if col_index < 5:
                         str_item = str_item + text + split_str
                     elif col_index == 5:
-                        if text == '成功':
+                        if text == '领券成功':
                             flag = 1
                         if text == '超时':
                             flag = 2
-                        if text == '领券成功':
-                            flag = 3
                         str_item = str_item + text + split_str
                     else:
                         str_item = str_item + text
@@ -321,8 +315,6 @@ class MyFrame(wx.Frame):
                     success_list.append(str_item + '\n')
                 elif flag == 2:
                     time_out_list.append(str_item + '\n')
-                elif flag == 3:
-                    lq_success_list.append(str_item + '\n')
                 else:
                     error_list.append(str_item + '\n')
             # 执行成功列表
@@ -337,21 +329,6 @@ class MyFrame(wx.Frame):
             with open(base_path + file_time_out_name, 'w') as ff:
                 for item in time_out_list:
                     ff.writelines(item)
-            # 领券成功列表，支付未成功
-            with open(base_path + file_lq_success_name, 'w') as ff:
-                for item in lq_success_list:
-                    ff.writelines(item)
-            # 所有领券成功的数据
-            if len(self.all_lq_success_list) > 0:
-                # str_item = ''
-                # split_str = '----'
-                with open(base_path + all_lq_success_name, 'w') as ff:
-                    for arr in self.all_lq_success_list:
-                        try:
-                            str_info = '----'.join(arr)
-                            ff.writelines(str_info)
-                        except Exception as e:
-                            print(e)
 
         start_directory = base_r_path
         os.startfile(start_directory)
@@ -370,9 +347,9 @@ class MyFrame(wx.Frame):
         logger.info(hwnd)
         change_proxy_ins = AutoChangeProxy(vpn_path_input_text)
         # country = self.country_map[self.country_list_ctrl.GetValue()]
-        country = 'US'
+        country = 'GB'
         logger.info('国家：' + country)
-        res = change_proxy_ins.change_ip('US', hwnd=str(hwnd))
+        res = change_proxy_ins.change_ip('GB', hwnd=str(hwnd))
         return res
 
     def chang_ctrl_status(self, disabled: bool):
@@ -436,7 +413,7 @@ class MyFrame(wx.Frame):
         # 切换次数
         vpn_number = int(self.vpn_ctrl.GetValue())
         # country_text = self.country_list_ctrl.GetValue()
-        country_text = '美国'
+        country_text = '英国'
         country = self.country_map[country_text]
         print(country)
         # 写入配置文件
@@ -457,13 +434,6 @@ class MyFrame(wx.Frame):
         son_thread.start()
 
 
-# class RegisterPaypalThread(threading.Thread):
-#     def __init__(self, parent):
-#         super(RegisterPaypalThread, self).__init__()
-#         self.parent = parent
-#         self.setDaemon(True)
-#
-#     def run(self):
 class LoopTableThread(threading.Thread):
     def __init__(self, parent, country, vpn_number):
         super(LoopTableThread, self).__init__()
@@ -497,32 +467,6 @@ class LoopTableThread(threading.Thread):
 
                 col_count = self.parent.table.list.GetColumnCount() - 2
                 col_count_last = self.parent.table.list.GetColumnCount() - 1
-                # print(self.table.list.GetItem(col_count-1).GetText())
-                # 切换vpn
-                # if current_vpn_index == 0:
-                #     self.parent.get_vpn_res(None)
-                # else:
-                #     current_vpn_index = current_vpn_index + 1
-                # if current_vpn_index >= self.vpn_number or current_vpn_index == 0:
-                #     current_vpn_index = current_vpn_index + 1
-                #     if current_vpn_index > self.vpn_number:
-                #         current_vpn_index = 1
-                #     ip = self.parent.get_vpn_res(None)
-                #     # 重试三次
-                #     if not ip:
-                #         ip = self.parent.get_vpn_res(None)
-                #     if not ip:
-                #         ip = self.parent.get_vpn_res(None)
-                #     if not ip:
-                #         ip = self.parent.get_vpn_res(None)
-                # else:
-                #     current_vpn_index = current_vpn_index + 1
-                # logger.info('ip 地址：')
-                # logger.info(ip)
-                # if ip:
-                #     wx.CallAfter(self.parent.table.list.SetItem, idx, col_count - 1, ip)
-                # else:
-                #     wx.CallAfter(self.parent.table.list.SetItem, idx, col_count - 1, '-')
 
                 current_item = self.parent.table.list.GetItemText(idx)
                 logger.info("current_item:")
@@ -540,17 +484,17 @@ class LoopTableThread(threading.Thread):
                 # 实例化注册类
 
                 account_list = []
-                for col_index in range(0, 7):
+                for col_index in range(0, 9):
                     text = self.parent.table.list.GetItemText(idx, col_index)
                     account_list.append(text)
                 logger.info(account_list)
                 # 登录链接
-                sign_url = 'https://www.paypal.com/us/signin'
+                sign_url = 'https://www.paypal.com/signin/authorize?client_id=AWGB1KL2xHGOo453DgRGVYSb0M0wrFjRIMY6WCRkmdEZ6WqjjnAfnLOv3Rigupp5RoDr1wqBNHHtbSto&response_type=code&state=eyJmbG93X2lkIjoiMiIsInByb21vX2NvZGUiOiJQU0lfTFAwNiIsInJldHVybl91cmkiOiJodHRwczovL3d3dy5wYXlwYWwuY29tIiwiRURQIjoia0JWWmN5emlDSHNYY3RPZ0c2S0tnQT09In0=&redirect_uri=https://apply.syf.com/applylanding/ApplyLanding'
                 # 领券链接
-                gift_url = 'https://www.paypal.com/us/webapps/mpp/pfs/welcome/offer/mobile/5'
+                gift_url = 'https://www.paypal.com/uk/webapps/mpp/pfs/welcome/offer/mobile/5'
                 # logger.info(current_item)
                 register_ins = register_call(account_list[0], account_list[1], account_list[2], account_list[3],
-                                             account_list[4], sign_url, gift_url)
+                                             account_list[4], account_list[5], account_list[6], sign_url, gift_url)
                 register_ins.play()
                 success_list = register_ins.successList
                 # 记录输出详情
@@ -566,20 +510,18 @@ class LoopTableThread(threading.Thread):
                     success_count = success_count + 1
                     wx.CallAfter(self.parent.process_result.SetLabelText,
                                  u'执行结果：成功：%d 条，失败：%d 条' % (success_count, error_count))
-                    wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '成功')
+                    wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '领券成功')
                 else:
                     self.parent.all_error_list.append(register_ins.account)
                     error_count = error_count + 1
                     wx.CallAfter(self.parent.process_result.SetLabelText,
                                  u'执行结果：成功：%d 条，失败：%d 条' % (success_count, error_count))
-                    if register_ins.error_type == '3':
-                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '领券成功')
-                    elif register_ins.error_type == '2':
+                    if register_ins.error_type == '2':
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '超时')
                         time_out_count = time_out_count + 1
                         is_time_out = True
                     else:
-                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '失败')
+                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '领券失败')
 
                     if register_ins.error_info:
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count_last, register_ins.error_info)
@@ -589,8 +531,8 @@ class LoopTableThread(threading.Thread):
                     self.parent.get_vpn_res(None)
                     time_out_count = 0
                     time.sleep(5)
-                # 一次循环累计超时5次超时暂停循环
-                if time_out_count == 5:
+                # 一次循环累计超时指定次数超时暂停循环
+                if time_out_count == self.vpn_number:
                     self.parent.pause_loop()
 
                 # logger.info('idx:' + str(idx))
@@ -630,30 +572,10 @@ class Table(wx.ListCtrl):
 
 def main():
     app = wx.App()
-    frm = MyFrame(None, title='自动注册', size=(1000, 750))
+    frm = MyFrame(None, title='英国纯领券程序', size=(1000, 750))
     frm.Show()
     app.MainLoop()
 
 
 if __name__ == '__main__':
-    # pathname = 'C:\\temp\\register\\'
-    # # if getattr(sys, 'frozen', False):
-    # #     pathname = sys._MEIPASS
-    # # else:
-    # #     pathname = os.path.split(os.path.realpath(__file__))[0]
-    # # global logUtil
-    # pt = os.path.join(pathname, 'all.log')
-    # print(pt)
-    # # os.chmod(pt, 0o777)
-    # # if not os.path.isfile(pt):
-    # #     os.makedirs(pt)
-    # with open(pt, mode='a', encoding='utf-8') as f:
-    #     pass
-    # logUtil = logger
     main()
-#     # When this module is run (not imported) then create the app, the
-#     # frame, show it, and start the event loop.
-#     app = wx.App()
-#     frm = MyFrame(None, title='注册', size=(900, 750))
-#     frm.Show()
-#     app.MainLoop()
