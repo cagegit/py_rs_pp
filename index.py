@@ -342,13 +342,18 @@ class MyFrame(wx.Frame):
                 for item in lq_success_list:
                     ff.writelines(item)
             # 所有领券成功的数据
-            if len(self.all_lq_success_list) > 0:
+            arr_len = len(self.all_lq_success_list)
+            if arr_len > 0:
                 # str_item = ''
                 # split_str = '----'
                 with open(base_path + all_lq_success_name, 'w') as ff:
-                    for arr in self.all_lq_success_list:
+                    arr_index_max = arr_len - 1
+                    for inx, arr in enumerate(self.all_lq_success_list):
                         try:
-                            str_info = '----'.join(arr)
+                            if inx == arr_index_max:
+                                str_info = '----'.join(arr)
+                            else:
+                                str_info = '----'.join(arr) + '\n'
                             ff.writelines(str_info)
                         except Exception as e:
                             print(e)

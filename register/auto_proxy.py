@@ -15,7 +15,7 @@ proxy_list = ['5', '8', '12', '23', '24', '32', '37', '38', '40', '45', '47', '5
 class AutoChangeProxy:
     # exe = r'C:\Users\Administrator\Documents\911\ProxyTool\Autoproxytool.exe'
     # 911 代理路径
-    exe = r'C:\Users\Administrator\Documents\911\ProxyTool\Autoproxytool.exe'
+    exe = r'C:\Users\Administrator\Documents\911\ProxyTool\AutoProxyTool.exe'
     ip_list = list(range(1, 256))
 
     # param = r' -changeproxy/US/NY -proxyport=all -hwnd=test';
@@ -23,7 +23,7 @@ class AutoChangeProxy:
     def __init__(self, vpn_path=None):
         logger.info('切换代理功能启动!')
         if vpn_path:
-            self.exe = os.path.join(r'' + vpn_path, 'ProxyTool', 'Autoproxytool.exe')
+            self.exe = os.path.join(r'' + vpn_path, 'ProxyTool', 'AutoProxyTool.exe')
 
     def change_ip(self, country='US', ip="23.*.*.*", hwnd=None):
         # param = r' -changeproxy/US/NY -proxyport=all -hwnd=test';
