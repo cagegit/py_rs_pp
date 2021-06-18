@@ -69,9 +69,10 @@ class WxTextCtrlHandler(logging.Handler):
 
 # 拖拽到文本框
 class MyFileDropTarget(wx.FileDropTarget):
-    def __init__(self, table):
+    def __init__(self, parent):
         wx.FileDropTarget.__init__(self)
-        self.table = table
+        self.table = parent.table
+        self.parent = parent
 
     def OnDropFiles(self, x, y, filenames):
         logger.info('接收到文件')
@@ -111,6 +112,11 @@ class MyFileDropTarget(wx.FileDropTarget):
                 for item in table_list:
                     self.table.add_item(item)
                 wx.MessageBox(f'成功导入{len(table_list)}条数据！', '提示', wx.OK | wx.ICON_INFORMATION)
+            # 重新导入重置数据
+            self.parent.error_count = 0
+            self.parent.success_count = 0
+            self.parent.current_loop_index = 0
+            self.parent.all_lq_success_list = []
         else:
             wx.MessageBox('文件导入失败，请重新输入！', '提示', wx.OK | wx.ICON_ERROR)
         # for file in filenames:
@@ -130,6 +136,10 @@ class MyFrame(wx.Frame):
         # 增加暂停功能
         self.is_pause = False
         self.current_loop_index = 0
+        self.success_count = 0
+        self.error_count = 0
+        # 领券成功列表
+        self.all_lq_success_list = []
 
         pnl = wx.Panel(self)
         pnl.SetAutoLayout(True)
@@ -238,7 +248,7 @@ class MyFrame(wx.Frame):
         sizer.Add(self.table.list, 1, wx.EXPAND, 10)
         vbox.Add(sizer, 1, wx.EXPAND | wx.ALL, 0)
         # 拖拽上传文件
-        dt = MyFileDropTarget(self.table)
+        dt = MyFileDropTarget(self)
         self.table.list.SetDropTarget(dt)
 
         #  pnl1 = wx.Panel(self)
@@ -269,6 +279,9 @@ class MyFrame(wx.Frame):
         if confirm_exit.ShowModal() == wx.ID_YES:
             self.table.clear_all_items()
             self.current_loop_index = 0
+            self.success_count = 0
+            self.error_count = 0
+            self.all_lq_success_list = []
             logger.info('列表已清空！')
         else:
             logger.info('取消清空！')
@@ -281,6 +294,7 @@ class MyFrame(wx.Frame):
             file_error_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_失败结果.txt'
             file_time_out_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_超时结果.txt'
             file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功未支付结果.txt'
+            all_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_所有领券成功结果.txt'
             success_list = []
             error_list = []
             time_out_list = []
@@ -327,6 +341,17 @@ class MyFrame(wx.Frame):
             with open(base_path + file_lq_success_name, 'w') as ff:
                 for item in lq_success_list:
                     ff.writelines(item)
+            # 所有领券成功的数据
+            if len(self.all_lq_success_list) > 0:
+                # str_item = ''
+                # split_str = '----'
+                with open(base_path + all_lq_success_name, 'w') as ff:
+                    for arr in self.all_lq_success_list:
+                        try:
+                            str_info = '----'.join(arr)
+                            ff.writelines(str_info)
+                        except Exception as e:
+                            print(e)
 
         start_directory = base_r_path
         os.startfile(start_directory)
@@ -457,8 +482,8 @@ class LoopTableThread(threading.Thread):
 
         logger.info(register_call)
         current_vpn_index = 0
-        success_count = 0
-        error_count = 0
+        success_count = self.parent.success_count
+        error_count = self.parent.error_count
         time_out_count = 0
         if web_url and register_call:
             ip = None
@@ -466,6 +491,8 @@ class LoopTableThread(threading.Thread):
                 # 增加暂停功能
                 if self.parent.is_pause:
                     self.parent.current_loop_index = idx
+                    self.parent.success_count = success_count
+                    self.parent.error_count = error_count
                     break
 
                 col_count = self.parent.table.list.GetColumnCount() - 2
@@ -522,12 +549,17 @@ class LoopTableThread(threading.Thread):
                 # 领券链接
                 gift_url = 'https://www.paypal.com/us/webapps/mpp/pfs/welcome/offer/mobile/5'
                 # logger.info(current_item)
-                register_ins = register_call(account_list[0], account_list[1], account_list[2], account_list[3], account_list[4], sign_url, gift_url)
+                register_ins = register_call(account_list[0], account_list[1], account_list[2], account_list[3],
+                                             account_list[4], sign_url, gift_url)
                 register_ins.play()
                 success_list = register_ins.successList
                 # 记录输出详情
                 logger.info(register_ins.successList)
                 logger.info(register_ins.errorList)
+                # 赋值给领券成功列表
+                if len(register_ins.lq_success_list) > 0:
+                    self.parent.all_lq_success_list.append(register_ins.lq_success_list)
+
                 is_time_out = False
                 if len(success_list) > 0:
                     self.parent.all_success_list.append(success_list[0])

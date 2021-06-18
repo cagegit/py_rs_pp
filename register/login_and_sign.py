@@ -61,8 +61,9 @@ class LoginAndSign:
         #  付款页面
         self.transfer_url = 'https://www.paypal.com/myaccount/transfer/homepage'
         # 错误类型未知错误 => 1, 超时 => 2, 领券成功未支付 => 3
-        self.error_type = '1'
+        self.error_type = '2'
         self.error_info = ''
+        self.lq_success_list = []
         # self.userName = uName
         # self.passWord = uPass
         # logger.info(acccout)
@@ -148,12 +149,15 @@ class LoginAndSign:
             # time.sleep(200)
         except TimeoutException:
             logger.error('操作超时！该条数据可以重新使用', exc_info=True)
-            if self.error_type != '3':
+            if self.error_type == '3':
+                print('领券成功！')
+            else:
                 self.error_type = '2'
                 self.error_info = '操作超时！该条数据可以重新使用'
             self.errorList.append(self.u_name)
         except Exception as e:
             print(e)
+            self.error_info = '未知错误！该条数据可以重新使用'
             logger.error('未知错误！', exc_info=True)
             self.errorList.append(self.u_name)
         finally:
@@ -232,7 +236,7 @@ class LoginAndSign:
         logger.info(last_four_code)
         ssn_input.send_keys(last_four_code)
         # 点击确认按钮
-        ok_button = WebDriverWait(self.driver, 5).until(
+        ok_button = WebDriverWait(self.driver, 15).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, 'button[name=submit]'))
         )
         ok_button.click()
@@ -290,6 +294,7 @@ class LoginAndSign:
             # 领券成功
             logger.info('领券成功！')
             self.error_type = '3'
+            self.lq_success_list = self.account
             # 跳转到总览页面
             self.driver.get(self.summary_url)
             time.sleep(5)
@@ -298,6 +303,8 @@ class LoginAndSign:
             self.accept_five()
         elif 'You may have claimed' in info_hero_text:
             self.errorList.append(self.u_name)
+            self.error_type = '1'
+            self.error_info = '领券失败！'
             logger.error('没有购物券，领券失败，退出流程！')
 
     # 付款到指定账号
