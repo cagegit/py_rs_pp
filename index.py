@@ -293,8 +293,8 @@ class MyFrame(wx.Frame):
             file_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_成功结果.txt'
             file_error_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_失败结果.txt'
             file_time_out_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_超时结果.txt'
-            file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功未支付结果.txt'
-            all_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_所有领券成功结果.txt'
+            # file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功未支付结果.txt'
+            # all_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_所有领券成功结果.txt'
             success_list = []
             error_list = []
             time_out_list = []
@@ -338,25 +338,25 @@ class MyFrame(wx.Frame):
                 for item in time_out_list:
                     ff.writelines(item)
             # 领券成功列表，支付未成功
-            with open(base_path + file_lq_success_name, 'w') as ff:
-                for item in lq_success_list:
-                    ff.writelines(item)
+            # with open(base_path + file_lq_success_name, 'w') as ff:
+            #     for item in lq_success_list:
+            #         ff.writelines(item)
             # 所有领券成功的数据
-            arr_len = len(self.all_lq_success_list)
-            if arr_len > 0:
-                # str_item = ''
-                # split_str = '----'
-                with open(base_path + all_lq_success_name, 'w') as ff:
-                    arr_index_max = arr_len - 1
-                    for inx, arr in enumerate(self.all_lq_success_list):
-                        try:
-                            if inx == arr_index_max:
-                                str_info = '----'.join(arr)
-                            else:
-                                str_info = '----'.join(arr) + '\n'
-                            ff.writelines(str_info)
-                        except Exception as e:
-                            print(e)
+            # arr_len = len(self.all_lq_success_list)
+            # if arr_len > 0:
+            #     # str_item = ''
+            #     # split_str = '----'
+            #     with open(base_path + all_lq_success_name, 'w') as ff:
+            #         arr_index_max = arr_len - 1
+            #         for inx, arr in enumerate(self.all_lq_success_list):
+            #             try:
+            #                 if inx == arr_index_max:
+            #                     str_info = '----'.join(arr)
+            #                 else:
+            #                     str_info = '----'.join(arr) + '\n'
+            #                 ff.writelines(str_info)
+            #             except Exception as e:
+            #                 print(e)
 
         start_directory = base_r_path
         os.startfile(start_directory)
@@ -605,7 +605,6 @@ class LoopTableThread(threading.Thread):
             self.parent.current_loop_index = 0
             # self.parent.output_btn.Disable()
 
-
 # 表格增删改查
 class Table(wx.ListCtrl):
     def __init__(self, parent, columns, data_list):
@@ -636,7 +635,7 @@ class Table(wx.ListCtrl):
 
 def main():
     app = wx.App()
-    frm = MyFrame(None, title='自动注册', size=(1000, 750))
+    frm = MyFrame(None, title='美国-登录-接受-打款', size=(1000, 750))
     frm.Show()
     app.MainLoop()
 

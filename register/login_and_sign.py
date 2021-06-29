@@ -128,21 +128,19 @@ class LoginAndSign:
             submit_btn.click()
             time.sleep(5)
             # self.pay_to_account()
-            jx_btn = False
             try:
                 receive_btn = WebDriverWait(self.driver, 8).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'a.ppvx_btn.ppvx_btn--inverse'))
                 )
+                print(receive_btn)
                 logger.info('接受款项按钮')
-                if receive_btn:
-                    jx_btn = True
                 # time.sleep(10000)
                 self.accept_five()
             except TimeoutException:
                 logger.error('没有接受按钮存在！', exc_info=True)
                 # self.errorList.append(self.account)
-                if not jx_btn:
-                    self.ling_quan()
+                # if not jx_btn:
+                #     self.ling_quan()
             finally:
                 logger.info('领券流程结束！')
 
