@@ -567,6 +567,7 @@ class LoopTableThread(threading.Thread):
                     self.parent.all_lq_success_list.append(register_ins.lq_success_list)
 
                 is_time_out = False
+                is_ai_error = False
                 if len(success_list) > 0:
                     self.parent.all_success_list.append(success_list[0])
                     success_count = success_count + 1
@@ -588,9 +589,11 @@ class LoopTableThread(threading.Thread):
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '失败')
 
                     if register_ins.error_info:
+                        if register_ins.error_info == '出现人机验证':
+                            is_ai_error = True
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count_last, register_ins.error_info)
                 # 超时判断
-                if is_time_out:
+                if is_time_out or is_ai_error:
                     # 更换IP
                     self.parent.get_vpn_res(None)
                     time_out_count = 0

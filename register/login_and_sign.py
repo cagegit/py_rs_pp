@@ -128,6 +128,7 @@ class LoginAndSign:
             submit_btn.click()
             time.sleep(5)
             # self.pay_to_account()
+
             try:
                 receive_btn = WebDriverWait(self.driver, 8).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'a.ppvx_btn.ppvx_btn--inverse'))
@@ -147,12 +148,29 @@ class LoginAndSign:
             # time.sleep(200)
         except TimeoutException:
             logger.error('操作超时！该条数据可以重新使用', exc_info=True)
-            if self.error_type == '3':
-                print('领券成功！')
-            else:
-                self.error_type = '2'
-                self.error_info = '操作超时！该条数据可以重新使用'
-            self.errorList.append(self.u_name)
+            # 增加安全验证判断
+            has_ai_error = False
+            try:
+                # ads-plugin
+                ai_check = WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located((By.ID, 'ads-plugin'))
+                )
+                if ai_check:
+                    has_ai_error = True
+                    # 出现安全验证
+                    self.error_type = '1'
+                    self.error_info = '出现人机验证'
+                    self.errorList.append('出现人机验证！')
+            except Exception as e:
+                print(e)
+                logger.error('没有安全验证', exc_info=True)
+            if not has_ai_error:
+                if self.error_type == '3':
+                    print('领券成功！')
+                else:
+                    self.error_type = '2'
+                    self.error_info = '操作超时！该条数据可以重新使用'
+                self.errorList.append(self.u_name)
         except Exception as e:
             print(e)
             self.error_info = '未知错误！该条数据可以重新使用'
@@ -209,7 +227,6 @@ class LoginAndSign:
         else:
             birth_arr = []
         if len(birth_arr) == 3:
-            birth_input.send_keys(birth_arr[0])
             int_month = int(birth_arr[1])
             if int_month < 10:
                 birth_input.send_keys('0')
@@ -222,6 +239,7 @@ class LoginAndSign:
                 birth_input.send_keys(birth_arr[2])
             else:
                 birth_input.send_keys(birth_arr[2])
+            birth_input.send_keys(birth_arr[0])
             # birth_input.send_keys(birth_arr[1])
             # birth_input.send_keys(birth_arr[2])
         else:
@@ -241,7 +259,7 @@ class LoginAndSign:
         # 增加完成弹框验证
         has_done = False
         try:
-            done_link = WebDriverWait(self.driver, 10).until(
+            done_link = WebDriverWait(self.driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'a.ppvx_btn___5-7-4'))
             )
             if done_link:
@@ -249,29 +267,40 @@ class LoginAndSign:
                 done_link.click()
         except Exception as e:
             print(e)
-            logger.info('点击完成弹框出错！')
+            logger.error('识别完成弹框出错！', exc_info=True)
         # 如果弹出完成提示，页面会跳到首页，直接去转账
         if has_done:
-            time.sleep(3)
+            time.sleep(5)
             self.pay_to_account()
         else:
             # 判断是否出错
             # div#home_address.error
-            has_error = False
+            # has_error = False
+            # 判断ssn错误
             try:
-                address_error = WebDriverWait(self.driver, 6).until(
+                ssn_error = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'input#ssn.error'))
+                )
+                if ssn_error:
+                    self.error_type = '1'
+                    self.error_info = 'ssn出错'
+                    self.errorList.append('ssn出错，该条数据需要人工处理！')
+            except TimeoutException:
+                logger.info('ssn正常！')
+            try:
+                address_error = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'div#home_address.error'))
                 )
                 if address_error:
-                    has_error = True
+                    self.error_type = '1'
                     self.error_info = '地址栏出错误，该条数据需要人工处理！'
                     self.errorList.append('地址栏出错误，该条数据需要人工处理！')
             except TimeoutException:
-                print('获取错误超时！')
+                logger.info('地址栏正常！')
             # time.sleep(500)
             # 领取完成之后回到转账界面
-            if not has_error:
-                self.pay_to_account()
+            # if not has_error:
+            #     self.pay_to_account()
 
     def ling_quan(self):
         self.driver.get(self.gift_url)
