@@ -552,7 +552,8 @@ class LoopTableThread(threading.Thread):
                 # 登录链接
                 sign_url = 'https://www.paypal.com/us/signin'
                 # 领券链接
-                gift_url = 'https://www.paypal.com/us/webapps/mpp/pfs/welcome/offer/mobile/5'
+                # gift_url = 'https://www.paypal.com/us/webapps/mpp/pfs/welcome/offer/mobile/5'
+                gift_url = 'https://www.paypal.com/us/webapps/mpp/pfs/claim-offer5-2q/na-o'
                 # logger.info(current_item)
                 register_ins = register_call(account_list[0], account_list[1], account_list[2], account_list[3],
                                              account_list[4], sign_url, gift_url)
