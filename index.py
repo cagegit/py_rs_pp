@@ -270,9 +270,9 @@ class MyFrame(wx.Frame):
         self.Centre()
 
     def pause_loop(self, event):
-        print('pause info')
+        logger.info('点击了暂停！')
         self.is_pause = True
-        self.pause_btn.Disable()
+        self.chang_ctrl_status(True)
 
     def clear_table(self, event):
         confirm_exit = wx.MessageDialog(None, '确认要清空表格数据吗？', '确认框', wx.YES_NO | wx.ICON_QUESTION)
@@ -293,12 +293,16 @@ class MyFrame(wx.Frame):
             file_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_成功结果.txt'
             file_error_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_失败结果.txt'
             file_time_out_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_超时结果.txt'
-            # file_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_领券成功未支付结果.txt'
-            # all_lq_success_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_所有领券成功结果.txt'
+            file_tx_cw_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_填写错误.txt'
+            all_dk_sb_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_填写成功打款失败.txt'
+            all_transfer_name = time.strftime("%Y-%m-%d_%H时", time.localtime()) + '_transMoney存在打款失败.txt'
             success_list = []
             error_list = []
             time_out_list = []
             lq_success_list = []
+            tx_cw_list = []
+            dk_sb_list = []
+            dk_transfer_list = []
             for idx in range(0, self.table.list.GetItemCount()):
                 str_item = ''
                 flag = 0
@@ -314,6 +318,12 @@ class MyFrame(wx.Frame):
                             flag = 2
                         if text == '领券成功':
                             flag = 3
+                        if text == '填写错误':
+                            flag = 4
+                        if text == '填写正确，打款失败':
+                            flag = 5
+                        if text == 'transferMoney存在，打款失败':
+                            flag = 6
                         str_item = str_item + text + split_str
                     else:
                         str_item = str_item + text
@@ -323,6 +333,12 @@ class MyFrame(wx.Frame):
                     time_out_list.append(str_item + '\n')
                 elif flag == 3:
                     lq_success_list.append(str_item + '\n')
+                elif flag == 4:
+                    tx_cw_list.append(str_item + '\n')
+                elif flag == 5:
+                    dk_sb_list.append(str_item + '\n')
+                elif flag == 6:
+                    dk_transfer_list.append(str_item + '\n')
                 else:
                     error_list.append(str_item + '\n')
             # 执行成功列表
@@ -337,26 +353,22 @@ class MyFrame(wx.Frame):
             with open(base_path + file_time_out_name, 'w') as ff:
                 for item in time_out_list:
                     ff.writelines(item)
-            # 领券成功列表，支付未成功
+            # # 领券成功列表，支付未成功
             # with open(base_path + file_lq_success_name, 'w') as ff:
             #     for item in lq_success_list:
             #         ff.writelines(item)
-            # 所有领券成功的数据
-            # arr_len = len(self.all_lq_success_list)
-            # if arr_len > 0:
-            #     # str_item = ''
-            #     # split_str = '----'
-            #     with open(base_path + all_lq_success_name, 'w') as ff:
-            #         arr_index_max = arr_len - 1
-            #         for inx, arr in enumerate(self.all_lq_success_list):
-            #             try:
-            #                 if inx == arr_index_max:
-            #                     str_info = '----'.join(arr)
-            #                 else:
-            #                     str_info = '----'.join(arr) + '\n'
-            #                 ff.writelines(str_info)
-            #             except Exception as e:
-            #                 print(e)
+            #  _填写错误
+            with open(base_path + file_tx_cw_name, 'w') as ff:
+                for item in tx_cw_list:
+                    ff.writelines(item)
+            #  _填写成功打款失败
+            with open(base_path + all_dk_sb_name, 'w') as ff:
+                for item in dk_sb_list:
+                    ff.writelines(item)
+            #  _transMoney存在,打款失败
+            with open(base_path + all_transfer_name, 'w') as ff:
+                for item in dk_transfer_list:
+                    ff.writelines(item)
 
         start_directory = base_r_path
         os.startfile(start_directory)
@@ -489,12 +501,16 @@ class LoopTableThread(threading.Thread):
         current_vpn_index = 0
         success_count = self.parent.success_count
         error_count = self.parent.error_count
+        # 超时次数统计
         time_out_count = 0
+        # 人机失败次数
+        ai_error_count = 0
         if web_url and register_call:
             ip = None
             for idx in range(self.parent.current_loop_index, self.parent.table.list.GetItemCount()):
                 # 增加暂停功能
                 if self.parent.is_pause:
+                    logger.info('循环内部的暂停判断')
                     self.parent.current_loop_index = idx
                     self.parent.success_count = success_count
                     self.parent.error_count = error_count
@@ -581,6 +597,12 @@ class LoopTableThread(threading.Thread):
                                  u'执行结果：成功：%d 条，失败：%d 条' % (success_count, error_count))
                     if register_ins.error_type == '3':
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '领券成功')
+                    elif register_ins.error_type == '6':
+                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, 'transferMoney存在，打款失败')
+                    elif register_ins.error_type == '5':
+                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '填写正确，打款失败')
+                    elif register_ins.error_type == '4':
+                        wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '填写错误')
                     elif register_ins.error_type == '2':
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count, '超时')
                         time_out_count = time_out_count + 1
@@ -591,15 +613,28 @@ class LoopTableThread(threading.Thread):
                     if register_ins.error_info:
                         if register_ins.error_info == '出现人机验证':
                             is_ai_error = True
+                            ai_error_count = ai_error_count + 1
                         wx.CallAfter(self.parent.table.list.SetItem, idx, col_count_last, register_ins.error_info)
                 # 超时判断
                 if is_time_out or is_ai_error:
                     # 更换IP
                     self.parent.get_vpn_res(None)
-                    time_out_count = 0
                     time.sleep(5)
                 # 一次循环累计超时5次超时暂停循环
-                if time_out_count == 5:
+                if time_out_count == self.vpn_number:
+                    time_out_count = 0
+                    logger.info("超时次数超过上限，自动暂停")
+                    self.parent.current_loop_index = idx
+                    self.parent.success_count = success_count
+                    self.parent.error_count = error_count
+                    self.parent.pause_loop()
+                # 人机错误连续出现3次暂停循环：
+                if ai_error_count == 3:
+                    ai_error_count = 0
+                    logger.info("人机验证超过3次，自动暂停")
+                    self.parent.current_loop_index = idx
+                    self.parent.success_count = success_count
+                    self.parent.error_count = error_count
                     self.parent.pause_loop()
 
                 # logger.info('idx:' + str(idx))

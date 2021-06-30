@@ -60,7 +60,7 @@ class LoginAndSign:
         self.summary_url = 'https://www.paypal.com/myaccount/summary?intl=0'
         #  付款页面
         self.transfer_url = 'https://www.paypal.com/myaccount/transfer/homepage'
-        # 错误类型未知错误 => 1, 超时 => 2, 领券成功未支付 => 3
+        # 错误类型未知错误 => 1, 超时 => 2, 领券成功未支付 => 3， 填写错误 =4 ,填写正确打款失败=5，transferMoney按钮存在，打款失败
         self.error_type = '2'
         self.error_info = ''
         self.lq_success_list = []
@@ -127,21 +127,52 @@ class LoginAndSign:
             # time.sleep(1)
             submit_btn.click()
             time.sleep(5)
-            # self.pay_to_account()
-
+            has_q_btn = False
             try:
                 receive_btn = WebDriverWait(self.driver, 8).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'a.ppvx_btn.ppvx_btn--inverse'))
                 )
                 print(receive_btn)
-                logger.info('接受款项按钮')
+                logger.info('接受款项按钮存在')
+                has_q_btn = True
                 # time.sleep(10000)
                 self.accept_five()
             except TimeoutException:
+                # 增加对余额的判断
+                try:
+                    transfer_money_a = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'a.test_balance_btn-transferMoney'))
+                    )
+                    print(transfer_money_a)
+                    logger.info('transferMoney按钮存在')
+                    has_q_btn = True
+                    try:
+                        self.pay_to_account()
+                    except Exception as e:
+                        print(e)
+                        logger.error('打款未成功！', exc_info=True)
+                        self.error_type = '6'
+                        self.error_info = 'transferMoney存在,打款失败'
+                except TimeoutException:
+                    logger.info('transferMoney按钮不存在！')
                 logger.error('没有接受按钮存在！', exc_info=True)
-                # self.errorList.append(self.account)
-                # if not jx_btn:
-                #     self.ling_quan()
+                # a.test_balance_btn - transferMoney
+                if not has_q_btn:
+                    self.error_type = '1'
+                    self.error_info = '没有券存在'
+                try:
+                    ai_check = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.ID, 'ads-plugin'))
+                    )
+                    logger.info(ai_check)
+                    if ai_check:
+                        # 出现安全验证
+                        self.error_type = '1'
+                        self.error_info = '出现人机验证'
+                        self.errorList.append('出现人机验证！')
+                except Exception as e:
+                    print(e)
+                    logger.error('没有人机验证', exc_info=True)
             finally:
                 logger.info('领券流程结束！')
 
@@ -150,11 +181,13 @@ class LoginAndSign:
             logger.error('操作超时！该条数据可以重新使用', exc_info=True)
             # 增加安全验证判断
             has_ai_error = False
+            logger.info('人机验证判断开始：')
             try:
                 # ads-plugin
                 ai_check = WebDriverWait(self.driver, 5).until(
                     EC.presence_of_element_located((By.ID, 'ads-plugin'))
                 )
+                logger.info(ai_check)
                 if ai_check:
                     has_ai_error = True
                     # 出现安全验证
@@ -271,18 +304,26 @@ class LoginAndSign:
         # 如果弹出完成提示，页面会跳到首页，直接去转账
         if has_done:
             time.sleep(5)
-            self.pay_to_account()
+            try:
+                self.pay_to_account()
+            except Exception as e:
+                print(e)
+                self.error_type = '5'
+                self.error_info = '填写成功，打款失败'
+                logger.error('打款未成功！', exc_info=True)
         else:
             # 判断是否出错
             # div#home_address.error
             # has_error = False
             # 判断ssn错误
+            self.error_type = '4'
+            self.error_info = '未填写成功，其他错误'
             try:
                 ssn_error = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'input#ssn.error'))
                 )
                 if ssn_error:
-                    self.error_type = '1'
+                    self.error_type = '4'
                     self.error_info = 'ssn出错'
                     self.errorList.append('ssn出错，该条数据需要人工处理！')
             except TimeoutException:
@@ -292,7 +333,7 @@ class LoginAndSign:
                     EC.presence_of_element_located((By.CSS_SELECTOR, 'div#home_address.error'))
                 )
                 if address_error:
-                    self.error_type = '1'
+                    self.error_type = '4'
                     self.error_info = '地址栏出错误，该条数据需要人工处理！'
                     self.errorList.append('地址栏出错误，该条数据需要人工处理！')
             except TimeoutException:
